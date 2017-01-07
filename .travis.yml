@@ -4,9 +4,12 @@ scala:
    - 2.12.1
 jdk:
    - oraclejdk8
+env:
+   - HAZELCAST=3.6.7
+   - HAZELCAST=3.7.4
 install: true
 script:
-   - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} assemble check
+   - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} -Dhazelcast.version=${HAZELCAST} assemble check
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
