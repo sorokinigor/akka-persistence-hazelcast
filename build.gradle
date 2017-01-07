@@ -1,0 +1,83 @@
+plugins {
+  id 'scala'
+}
+
+group 'com.github.sorokinigor'
+version '1.0.0-SNAPSHOT'
+
+repositories {
+  jcenter()
+}
+
+ext.versions = [
+    scala    : [major: '2.12', current: '2.12.1'],
+    hazelcast: '3.7.4',
+    akka     : [scala: '2.11', framework: '2.4.16'],
+    scalaTest: '3.0.1',
+    junit    : '4.12',
+    slf4j    : '1.7.22',
+    logback  : '1.1.7'
+]
+
+dependencies {
+  /**
+   *  Compile only dependencies. Make sure you include the relevant dependencies in your project.
+   */
+  compileOnly "org.scala-lang:scala-library:${versions.scala.current}"
+
+  /* Hazelcast */
+  compileOnly "com.hazelcast:hazelcast:${versions.hazelcast}"
+  compileOnly "com.hazelcast:hazelcast-client:${versions.hazelcast}"
+
+  /* Akka */
+  compileOnly "com.typesafe.akka:akka-actor_${versions.akka.scala}:${versions.akka.framework}"
+  compileOnly "com.typesafe.akka:akka-persistence_${versions.akka.scala}:${versions.akka.framework}"
+
+  /**
+   *  Tests dependencies.
+   */
+  testCompile "org.scala-lang:scala-library:${versions.scala.current}"
+
+  /* Hazelcast */
+  testCompile "com.hazelcast:hazelcast:${versions.hazelcast}"
+  testCompile "com.hazelcast:hazelcast-client:${versions.hazelcast}"
+
+  /* Akka */
+  testCompile "com.typesafe.akka:akka-actor_${versions.akka.scala}:${versions.akka.framework}"
+  testCompile "com.typesafe.akka:akka-persistence_${versions.akka.scala}:${versions.akka.framework}"
+  testCompile "com.typesafe.akka:akka-slf4j_${versions.akka.scala}:${versions.akka.framework}"
+  testCompile "com.typesafe.akka:akka-testkit_${versions.akka.scala}:${versions.akka.framework}"
+  testCompile "com.typesafe.akka:akka-persistence-tck_${versions.akka.scala}:${versions.akka.framework}"
+
+  /* Test libraries */
+  testCompile "org.scalatest:scalatest_${versions.scala.major}:$versions.scalaTest"
+  testCompile "junit:junit:$versions.junit"
+
+  /* Logging */
+  testCompile "org.slf4j:slf4j-api:${versions.slf4j}"
+  testRuntime "ch.qos.logback:logback-classic:${versions.logback}"
+}
+
+test {
+  useJUnit()
+}
+
+def artifactName = "${project.name}_${versions.scala.major}"
+
+jar {
+  baseName = artifactName
+  manifest {
+    attributes "Implementation-Title": artifactName,
+               "Implementation-Version": version
+  }
+}
+
+task sourceJar(type: Jar) {
+  baseName = artifactName
+  classifier "sources"
+  from sourceSets.main.allSource
+}
+
+artifacts {
+  archives sourceJar
+}
