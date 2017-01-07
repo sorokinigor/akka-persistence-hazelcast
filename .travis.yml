@@ -4,6 +4,7 @@ scala:
    - 2.12.1
 jdk:
    - oraclejdk8
+install: true
 script:
    - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} assemble check
 before_cache:
