@@ -10,7 +10,7 @@ repositories {
 }
 
 ext.versions = [
-    scala    : [major: '2.12', current: '2.12.1'],
+    scala    : [major: '2.12', current: System.getProperty('scala.version', '2.12.1')],
     hazelcast: '3.7.4',
     akka     : [scala: '2.11', framework: '2.4.16'],
     scalaTest: '3.0.1',
