@@ -23,6 +23,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
 
   private val logger = Logging.getLogger(context.system, this)
   private val journalMap = HazelcastExtension(context.system).journalMap
+  private val highestDeletedSequenceNrMap = HazelcastExtension(context.system).highestDeletedSequenceNrMap
 
   override def asyncWriteMessages(messages: Seq[AtomicWrite]): Future[Seq[Try[Unit]]] =
     Future.traverse(messages) { write => doAtomicWrite(write.persistenceId, write.payload) }
@@ -49,11 +50,17 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
     }
   }
 
-  //TODO keep the highest sequence number
   override def asyncDeleteMessagesTo(persistenceId: String, toSequenceNr: Long): Future[Unit] = Future({
     val idPredicate = persistenceIdPredicate(persistenceId, Predicates.lessEqual("sequenceNr", toSequenceNr))
-    val deleted = journalMap.executeOnEntries(DeleteProcessor, idPredicate)
-    logger.debug(s"'${deleted.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
+    val keys = journalMap.keySet(idPredicate)
+    if (!keys.isEmpty) {
+      val highestDeletedSequenceNr = keys.asScala
+        .maxBy(eventId => eventId.sequenceNr)
+        .sequenceNr
+      highestDeletedSequenceNrMap.put(persistenceId, highestDeletedSequenceNr)
+    }
+    journalMap.executeOnKeys(keys, DeleteProcessor)
+    logger.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
   })
 
   override def asyncReplayMessages(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long)
@@ -81,10 +88,10 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
       Supplier.all[EventId, PersistentRepr, java.lang.Long](LongExtractor)
     )
     val sequenceNumber = journalMap.aggregate(supplier, Aggregations.longMax()).toLong match {
-      case Long.MinValue if journalMap.keySet(idPredicate).isEmpty => 0L
+      case Long.MinValue if journalMap.keySet(idPredicate).isEmpty =>
+        highestDeletedSequenceNrMap.getOrDefault(persistenceId, 0L)
       case any => any
     }
-
     logger.debug(s"Highest sequence number for '$persistenceId' from '$fromSequenceNr' is '$sequenceNumber'.")
     sequenceNumber
   })

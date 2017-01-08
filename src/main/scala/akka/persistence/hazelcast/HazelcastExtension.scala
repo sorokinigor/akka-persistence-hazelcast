@@ -40,6 +40,9 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
   private[hazelcast] lazy val journalMap: IMap[EventId, PersistentRepr] =
     hazelcast.getMap[EventId, PersistentRepr](config.getString("journal.map-name"))
 
+  private[hazelcast] lazy val highestDeletedSequenceNrMap: IMap[String, Long] =
+    hazelcast.getMap[String, Long](config.getString("journal.highest-deleted-sequence-number-map-name"))
+
   private def createSerializationConfig(clazz: Class[_]): SerializerConfig = {
     val serializer = serializationExtension.serializerFor(clazz)
     val config = new SerializerConfig()
