@@ -5,49 +5,69 @@ import akka.persistence.hazelcast.HazelcastExtension
 import akka.persistence.hazelcast.util.{DeleteProcessor, LongExtractor}
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{AtomicWrite, PersistentRepr}
-import com.hazelcast.core.ExecutionCallback
 import com.hazelcast.mapreduce.aggregation.{Aggregations, Supplier}
 import com.hazelcast.nio.serialization.HazelcastSerializationException
 import com.hazelcast.query.{Predicate, Predicates}
 
 import scala.collection.immutable.Seq
-import scala.concurrent.{Future, Promise}
-import scala.util.{Failure, Try}
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 /**
   * @author Igor Sorokin
   */
 private[hazelcast] final class MapJournal extends AsyncWriteJournal {
-  import scala.collection.JavaConverters._
   import context.dispatcher
 
+  import scala.collection.JavaConverters._
+  private val emptySuccess = Success({})
+
   private val logger = Logging.getLogger(context.system, this)
-  private val journalMap = HazelcastExtension(context.system).journalMap
-  private val highestDeletedSequenceNrMap = HazelcastExtension(context.system).highestDeletedSequenceNrMap
+  private val extension = HazelcastExtension(context.system)
+  private val journalMap = extension.journalMap
+  private val highestDeletedSequenceNrMap = extension.highestDeletedSequenceNrMap
 
   override def asyncWriteMessages(messages: Seq[AtomicWrite]): Future[Seq[Try[Unit]]] =
     Future.traverse(messages) { write => doAtomicWrite(write.persistenceId, write.payload) }
 
   private def doAtomicWrite(persistenceId: String, events: Seq[PersistentRepr]): Future[Try[Unit]] = {
-    if (events.size == 1) {
-      val promise = Promise.apply[Try[Unit]]()
-      val event = events.last
-      try {
-        journalMap.putAsync(new EventId(persistenceId, event.sequenceNr), event)
-          .andThen(new ExecutionCallback[PersistentRepr] {
-            override def onResponse(response: PersistentRepr): Unit = promise.success(Try())
-
-            override def onFailure(exception: Throwable): Unit = promise.failure(exception)
-          })
-      } catch {
-        case e: HazelcastSerializationException =>
-          promise.success(Failure(e))
+    Future({
+      if (events.size == 1) {
+        val event = events.last
+        try {
+          journalMap.put(EventId(event), event)
+          emptySuccess
+        } catch {
+          case e: HazelcastSerializationException => Failure(e)
+        }
+      } else {
+        if (extension.isTransactionEnabled) {
+          val context = extension.hazelcast.newTransactionContext(extension.transactionOptions)
+          context.beginTransaction()
+          try {
+            val journalTransactionMap = context.getMap[EventId, PersistentRepr](extension.journalMapName)
+            events.foreach(event => journalTransactionMap.put(EventId(event), event))
+            context.commitTransaction()
+            emptySuccess
+          } catch {
+            case e: Throwable =>
+              logger.error(
+                s"Rolling back transaction '${context.getTxnId}' for '$persistenceId' with '${events.size}' events."
+              )
+              context.rollbackTransaction()
+              throw e
+          }
+        } else if (extension.shouldFailOnBatchWritesWithoutTransacton) {
+          throw new UnsupportedOperationException("Transaction are not enabled. " +
+            "Enable 'hazelcast.journal.transaction.enable' (recommended) or" +
+            " disable 'hazelcast.journal.fail-on-batch-writes-without-transaction'."
+          )
+        } else {
+          events.foreach(event => journalMap.put(EventId(event), event))
+          emptySuccess
+        }
       }
-      promise.future
-    } else {
-      //TODO
-      Future.failed(new UnsupportedOperationException())
-    }
+    })
   }
 
   override def asyncDeleteMessagesTo(persistenceId: String, toSequenceNr: Long): Future[Unit] = Future({
