@@ -2,7 +2,7 @@ package akka.persistence.hazelcast
 
 import akka.actor.{ActorSystem, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
 import akka.persistence.PersistentRepr
-import akka.persistence.hazelcast.journal.JournalEventId
+import akka.persistence.hazelcast.journal.EventId
 import akka.persistence.hazelcast.util.SerializerAdapter
 import akka.serialization.SerializationExtension
 import com.hazelcast.config.{ClasspathXmlConfig, SerializerConfig}
@@ -37,8 +37,8 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
     Hazelcast.newHazelcastInstance(hazelcastConfig)
   }
 
-  private[hazelcast] lazy val journalMap: IMap[JournalEventId, PersistentRepr] =
-    hazelcast.getMap[JournalEventId, PersistentRepr](config.getString("journal.map-name"))
+  private[hazelcast] lazy val journalMap: IMap[EventId, PersistentRepr] =
+    hazelcast.getMap[EventId, PersistentRepr](config.getString("journal.map-name"))
 
   private def createSerializationConfig(clazz: Class[_]): SerializerConfig = {
     val serializer = serializationExtension.serializerFor(clazz)
