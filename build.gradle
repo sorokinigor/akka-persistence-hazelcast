@@ -1,5 +1,6 @@
 plugins {
   id 'scala'
+  id "com.github.maiflai.scalatest" version "0.14"
 }
 
 group 'com.github.sorokinigor'
@@ -8,13 +9,14 @@ version '1.0.0-SNAPSHOT'
 repositories {
   jcenter()
 }
+def scalaVersion = System.getProperty('scala.version', '2.12.1')
+def scalaMajorVersion = toMajorVersion(scalaVersion)
 
 ext.versions = [
-    scala    : [major: '2.12', current: System.getProperty('scala.version', '2.12.1')],
+    scala    : [major: scalaMajorVersion, current: scalaVersion],
     hazelcast: System.getProperty('hazelcast.version', '3.7.4'),
-    akka     : [scala: '2.11', framework: '2.4.16'],
+    akka     : '2.4.16',
     scalaTest: '3.0.1',
-    junit    : '4.12',
     slf4j    : '1.7.22',
     logback  : '1.1.7'
 ]
@@ -30,8 +32,8 @@ dependencies {
   compileOnly "com.hazelcast:hazelcast-client:${versions.hazelcast}"
 
   /* Akka */
-  compileOnly "com.typesafe.akka:akka-actor_${versions.akka.scala}:${versions.akka.framework}"
-  compileOnly "com.typesafe.akka:akka-persistence_${versions.akka.scala}:${versions.akka.framework}"
+  compileOnly "com.typesafe.akka:akka-actor_${versions.scala.major}:${versions.akka}"
+  compileOnly "com.typesafe.akka:akka-persistence_${versions.scala.major}:${versions.akka}"
 
   /**
    *  Tests dependencies.
@@ -43,23 +45,19 @@ dependencies {
   testCompile "com.hazelcast:hazelcast-client:${versions.hazelcast}"
 
   /* Akka */
-  testCompile "com.typesafe.akka:akka-actor_${versions.akka.scala}:${versions.akka.framework}"
-  testCompile "com.typesafe.akka:akka-persistence_${versions.akka.scala}:${versions.akka.framework}"
-  testCompile "com.typesafe.akka:akka-slf4j_${versions.akka.scala}:${versions.akka.framework}"
-  testCompile "com.typesafe.akka:akka-testkit_${versions.akka.scala}:${versions.akka.framework}"
-  testCompile "com.typesafe.akka:akka-persistence-tck_${versions.akka.scala}:${versions.akka.framework}"
+  testCompile "com.typesafe.akka:akka-actor_${versions.scala.major}:${versions.akka}"
+  testCompile "com.typesafe.akka:akka-persistence_${versions.scala.major}:${versions.akka}"
+  testCompile "com.typesafe.akka:akka-slf4j_${versions.scala.major}:${versions.akka}"
+  testCompile "com.typesafe.akka:akka-testkit_${versions.scala.major}:${versions.akka}"
+  testCompile "com.typesafe.akka:akka-persistence-tck_${versions.scala.major}:${versions.akka}"
 
   /* Test libraries */
-  testCompile "org.scalatest:scalatest_${versions.scala.major}:$versions.scalaTest"
-  testCompile "junit:junit:$versions.junit"
+  testCompile "org.scalatest:scalatest_${versions.scala.major}:${versions.scalaTest}"
+  testRuntime 'org.pegdown:pegdown:1.6.0'
 
   /* Logging */
   testCompile "org.slf4j:slf4j-api:${versions.slf4j}"
   testRuntime "ch.qos.logback:logback-classic:${versions.logback}"
-}
-
-test {
-  useJUnit()
 }
 
 def artifactName = "${project.name}_${versions.scala.major}"
@@ -80,4 +78,14 @@ task sourceJar(type: Jar) {
 
 artifacts {
   archives sourceJar
+}
+
+def toMajorVersion(String scalaVersion) {
+  def pattern = java.util.regex.Pattern.compile('(\\d+\\.\\d+)\\.\\d+.*')
+  def matcher = pattern.matcher(scalaVersion)
+  if (matcher.matches()) {
+    return matcher.group(1)
+  } else {
+    throw new IllegalArgumentException("Unable to parse scala major version '$scalaVersion'.")
+  }
 }
