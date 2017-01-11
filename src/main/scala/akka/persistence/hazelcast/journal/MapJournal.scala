@@ -1,6 +1,6 @@
 package akka.persistence.hazelcast.journal
 
-import akka.event.Logging
+import akka.actor.ActorLogging
 import akka.persistence.hazelcast.HazelcastExtension
 import akka.persistence.hazelcast.util.{DeleteProcessor, LongExtractor}
 import akka.persistence.journal.AsyncWriteJournal
@@ -21,12 +21,11 @@ private[hazelcast] object MapJournal {
   private val emptySuccess = Success({})
 }
 
-private[hazelcast] final class MapJournal extends AsyncWriteJournal {
+private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLogging {
   import scala.collection.JavaConverters._
   import scala.collection.breakOut
   import context.dispatcher
 
-  private val logger = Logging.getLogger(context.system, this)
   private val extension = HazelcastExtension(context.system)
   private val journalMap = extension.journalMap
   private val highestDeletedSequenceNrMap = extension.highestDeletedSequenceNrMap
@@ -80,12 +79,12 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
   }
 
   private def rollbackTransaction(context: TransactionContext, persistenceId: String, cause: Exception) : Unit = {
-    logger.error(s"Rolling back transaction '${context.getTxnId}' for '$persistenceId'.")
+    log.error(s"Rolling back transaction '${context.getTxnId}' for '$persistenceId'.")
     try {
       context.rollbackTransaction()
     } catch {
       case rollbackException: Exception =>
-        logger.error(s"Unable to rollback transaction '${context.getTxnId}' for '$persistenceId'.")
+        log.error(s"Unable to rollback transaction '${context.getTxnId}' for '$persistenceId'.")
         cause.addSuppressed(rollbackException)
     }
   }
@@ -112,7 +111,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
         highestDeletedSequenceNrMap.put(persistenceId, highestDeletedSequenceNr)
       }
       journalMap.executeOnKeys(keys, DeleteProcessor)
-      logger.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
+      log.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
     })
 
   override def asyncReplayMessages(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long)
@@ -130,7 +129,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
         .sortBy(event => event.sequenceNr)
         .take(if (max > Int.MaxValue) Int.MaxValue else max.toInt)
         .count(event => { recoveryCallback(event); true })
-      logger.debug(s"'$numberOfEvents' events has been replayed for '$persistenceId' from '$fromSequenceNr' " +
+      log.debug(s"'$numberOfEvents' events has been replayed for '$persistenceId' from '$fromSequenceNr' " +
         s"to '$toSequenceNr'. Max number of events was '$max'.")
     })
 
@@ -146,7 +145,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal {
           highestDeletedSequenceNrMap.getOrDefault(persistenceId, 0L)
         case any => any
       }
-      logger.debug(s"Highest sequence number for '$persistenceId' from '$fromSequenceNr' is '$sequenceNumber'.")
+      log.debug(s"Highest sequence number for '$persistenceId' from '$fromSequenceNr' is '$sequenceNumber'.")
       sequenceNumber
     })
 
