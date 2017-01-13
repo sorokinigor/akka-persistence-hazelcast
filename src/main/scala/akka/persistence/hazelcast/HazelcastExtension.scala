@@ -32,6 +32,7 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
   private val serializationExtension = SerializationExtension(system)
 
   private[hazelcast] val config: Config = system.settings.config.getConfig("hazelcast")
+
   val hazelcast: HazelcastInstance = {
     val hazelcastConfig = new ClasspathXmlConfig(config.getString("config-file"))
     val serializationConfig = hazelcastConfig.getSerializationConfig
@@ -47,9 +48,10 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
   private[hazelcast] lazy val highestDeletedSequenceNrMap: IMap[String, Long] =
     hazelcast.getMap[String, Long](config.getString("journal.highest-deleted-sequence-number-map-name"))
 
-  private[hazelcast] val isTransactionEnabled: Boolean = config.getBoolean("journal.transaction.enabled")
-  private[hazelcast] val shouldFailOnBatchWritesWithoutTransacton: Boolean =
+  private[hazelcast] val shouldFailOnBatchWritesWithoutTransaction: Boolean =
     config.getBoolean("journal.fail-on-batch-writes-without-transaction")
+
+  private[hazelcast] val isTransactionEnabled: Boolean = config.getBoolean("journal.transaction.enabled")
   private[hazelcast] val transactionOptions: TransactionOptions = {
     val transactionConfig: Config = config.getConfig("journal.transaction")
     val options = new TransactionOptions()

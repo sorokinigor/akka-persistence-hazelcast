@@ -40,7 +40,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
           writeSingleEvent(events.last)
         case size if size > 1 && extension.isTransactionEnabled =>
           writeBatchInTransaction(persistenceId, events)
-        case size if size > 1 && extension.shouldFailOnBatchWritesWithoutTransacton =>
+        case size if size > 1 && extension.shouldFailOnBatchWritesWithoutTransaction =>
           throw new UnsupportedOperationException("Transaction are not enabled. " +
             "Enable 'hazelcast.journal.transaction.enable' (recommended) or" +
             " disable 'hazelcast.journal.fail-on-batch-writes-without-transaction'."

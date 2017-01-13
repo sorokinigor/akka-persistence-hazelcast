@@ -16,4 +16,5 @@ private[hazelcast] final class SerializerAdapter(private val serializer: Seriali
   override def getTypeId: Int = serializer.identifier
 
   override def destroy(): Unit = {}
+
 }

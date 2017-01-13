@@ -8,5 +8,7 @@ import com.hazelcast.mapreduce.aggregation.PropertyExtractor
   */
 @SerialVersionUID(1L)
 private[hazelcast] object LongExtractor extends PropertyExtractor[PersistentRepr, java.lang.Long] {
+
   override def extract(value: PersistentRepr): java.lang.Long = value.sequenceNr
+
 }
