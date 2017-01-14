@@ -9,7 +9,7 @@ env:
    - HAZELCAST=3.7.4
 install: true
 script:
-   - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} -Dhazelcast.version=${HAZELCAST} assemble check
+   - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} -Dhazelcast.version=${HAZELCAST} clean assemble testScoverage reportScoverage checkScoverage
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -17,3 +17,5 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
