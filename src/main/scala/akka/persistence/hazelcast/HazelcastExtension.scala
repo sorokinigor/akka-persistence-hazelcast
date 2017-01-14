@@ -48,8 +48,8 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
   private[hazelcast] lazy val highestDeletedSequenceNrMap: IMap[String, Long] =
     hazelcast.getMap[String, Long](config.getString("journal.highest-deleted-sequence-number-map-name"))
 
-  private[hazelcast] val shouldFailOnBatchWritesWithoutTransaction: Boolean =
-    config.getBoolean("journal.fail-on-batch-writes-without-transaction")
+  private[hazelcast] val shouldFailOnNonAtomicPersistAll: Boolean =
+    config.getBoolean("journal.fail-on-non-atomic-persist-all")
 
   private[hazelcast] val isTransactionEnabled: Boolean = config.getBoolean("journal.transaction.enabled")
   private[hazelcast] val transactionOptions: TransactionOptions = {

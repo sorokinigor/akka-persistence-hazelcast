@@ -22,8 +22,8 @@ class MapJournalWithEnabledTransactionsSpec
 
 }
 
-class MapJournalWithUnsafeBatchWritesSpec
-  extends JournalSpec(ConfigFactory.load("application-unsafe-batch-writes.conf")) {
+class MapJournalWithNonAtomicPersistAllSpec
+  extends JournalSpec(ConfigFactory.load("application-non-atomic-persist-all.conf")) {
 
   override protected def supportsRejectingNonSerializableObjects: CapabilityFlag = CapabilityFlag.on()
 

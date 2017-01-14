@@ -40,13 +40,13 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
           writeSingleEvent(events.last)
         case size if size > 1 && extension.isTransactionEnabled =>
           writeBatchInTransaction(persistenceId, events)
-        case size if size > 1 && extension.shouldFailOnBatchWritesWithoutTransaction =>
-          throw new UnsupportedOperationException("Transaction are not enabled. " +
-            "Enable 'hazelcast.journal.transaction.enable' (recommended) or" +
-            " disable 'hazelcast.journal.fail-on-batch-writes-without-transaction'."
+        case size if size > 1 && extension.shouldFailOnNonAtomicPersistAll =>
+          throw new UnsupportedOperationException(
+            "Transaction are not enabled. Enable 'hazelcast.journal.transaction.enabled' (recommended) or" +
+            " disable 'hazelcast.journal.fail-on-non-atomic-persist-all'."
           )
         case _ =>
-          writeBatchUnsafely(events)
+          writeBatchNonAtomically(events)
       }
     })
 
@@ -89,7 +89,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     }
   }
 
-  private def writeBatchUnsafely(events: Seq[PersistentRepr]): Try[Unit] = {
+  private def writeBatchNonAtomically(events: Seq[PersistentRepr]): Try[Unit] = {
     try {
       val toPut: Map[EventId, PersistentRepr] = events.map(event => EventId(event) -> event)(breakOut)
       journalMap.putAll(toPut.asJava)
