@@ -21,3 +21,10 @@ class MapJournalWithEnabledTransactionsSpec
   override protected def supportsRejectingNonSerializableObjects: CapabilityFlag = CapabilityFlag.on()
 
 }
+
+class MapJournalWithUnsafeBatchWritesSpec
+  extends JournalSpec(ConfigFactory.load("application-unsafe-batch-writes.conf")) {
+
+  override protected def supportsRejectingNonSerializableObjects: CapabilityFlag = CapabilityFlag.on()
+
+}
