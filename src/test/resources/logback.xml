@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="AKKA" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{ISO8601} %highlight(%-5level) [%X{sourceThread}][%X{akkaSource}] %logger{36}: %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{ISO8601} %highlight(%-5level) [%thread] %logger{36}: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="akka.persistence.hazelcast" level="debug" additivity="false">
+        <appender-ref ref="AKKA" />
+    </logger>
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
