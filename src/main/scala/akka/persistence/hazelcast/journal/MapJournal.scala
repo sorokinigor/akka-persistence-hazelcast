@@ -1,10 +1,14 @@
 package akka.persistence.hazelcast.journal
 
+import java.util.Map.Entry
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorLogging
 import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.hazelcast.util.{DeleteProcessor, LongExtractor}
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{AtomicWrite, PersistentRepr}
+import com.hazelcast.map.{EntryBackupProcessor, EntryProcessor}
 import com.hazelcast.mapreduce.aggregation.{Aggregations, Supplier}
 import com.hazelcast.nio.serialization.HazelcastSerializationException
 import com.hazelcast.query.{Predicate, Predicates}
@@ -109,7 +113,9 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
         val highestDeletedSequenceNr = keys.asScala
           .maxBy(eventId => eventId.sequenceNr)
           .sequenceNr
-        highestDeletedSequenceNrMap.set(persistenceId, highestDeletedSequenceNr)
+        highestDeletedSequenceNrMap
+          .submitToKey(persistenceId, new HighestSequenceNrProcessor(highestDeletedSequenceNr))
+          .get(1L, TimeUnit.MINUTES)
         journalMap.executeOnKeys(keys, DeleteProcessor)
       }
       log.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
@@ -154,5 +160,19 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
   ): Predicate[Id, PersistentRepr] =
     Predicates.and(Predicates.equal("persistenceId", persistenceId), predicate)
       .asInstanceOf[Predicate[Id, PersistentRepr]]
+
+}
+
+@SerialVersionUID(1L)
+private final class HighestSequenceNrProcessor(private val newSequenceNr: Long) extends EntryProcessor[String, Long] {
+
+  override def process(entry: Entry[String, Long]): AnyRef = {
+    if (newSequenceNr > entry.getValue) {
+      entry.setValue(newSequenceNr)
+    }
+    null
+  }
+
+  override def getBackupProcessor: EntryBackupProcessor[String, Long] = null
 
 }
