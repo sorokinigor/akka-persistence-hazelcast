@@ -53,7 +53,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeSingleEvent(event: PersistentRepr): Try[Unit] = {
     try {
-      journalMap.put(event.toId, event)
+      journalMap.set(event.toId, event)
       MapJournal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
@@ -66,7 +66,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     context.beginTransaction()
     try {
       val journalTransactionMap = context.getMap[Id, PersistentRepr](extension.journalMapName)
-      events.foreach(event => journalTransactionMap.put(event.toId, event))
+      events.foreach(event => journalTransactionMap.set(event.toId, event))
       context.commitTransaction()
       MapJournal.emptySuccess
     } catch {
@@ -92,7 +92,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeBatchNonAtomically(events: Seq[PersistentRepr]): Try[Unit] = {
     try {
-      val toPut: Map[Id, PersistentRepr] = events.map(event => event.to -> event)(breakOut)
+      val toPut: Map[Id, PersistentRepr] = events.map(event => event.toId -> event)(breakOut)
       journalMap.putAll(toPut.asJava)
       MapJournal.emptySuccess
     } catch {
@@ -109,7 +109,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
         val highestDeletedSequenceNr = keys.asScala
           .maxBy(eventId => eventId.sequenceNr)
           .sequenceNr
-        highestDeletedSequenceNrMap.put(persistenceId, highestDeletedSequenceNr)
+        highestDeletedSequenceNrMap.set(persistenceId, highestDeletedSequenceNr)
       }
       journalMap.executeOnKeys(keys, DeleteProcessor)
       log.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")

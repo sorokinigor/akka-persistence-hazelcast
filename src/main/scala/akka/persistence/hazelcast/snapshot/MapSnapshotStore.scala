@@ -37,7 +37,7 @@ private[hazelcast] final class MapSnapshotStore extends SnapshotStore {
   }
 
   override def saveAsync(metadata: SnapshotMetadata, snapshot: Any): Future[Unit] =
-    Future(snapshotMap.put(metadata.toId, Snapshot(metadata, PersistentSnapshot(snapshot))))
+    Future(snapshotMap.set(metadata.toId, Snapshot(metadata, PersistentSnapshot(snapshot))))
 
   override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] = Future(snapshotMap.delete(metadata.toId))
 
