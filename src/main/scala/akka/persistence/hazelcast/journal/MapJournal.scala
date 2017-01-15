@@ -122,9 +122,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
         persistenceId,
         Predicates.between("sequenceNr", fromSequenceNr, toSequenceNr)
       )
-      val eventKeys = journalMap.keySet(predicate)
-      val numberOfEvents = journalMap.getAll(eventKeys)
-        .values()
+      val numberOfEvents = journalMap.values(predicate)
         .asScala
         .toStream
         .sortBy(event => event.sequenceNr)
