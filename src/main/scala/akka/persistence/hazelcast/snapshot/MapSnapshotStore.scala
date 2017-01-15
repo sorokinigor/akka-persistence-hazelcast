@@ -1,6 +1,6 @@
 package akka.persistence.hazelcast.snapshot
 
-import akka.persistence.hazelcast.{HazelcastExtension, Id}
+import akka.persistence.hazelcast.HazelcastExtension
 import akka.persistence.hazelcast.util.DeleteProcessor
 import akka.persistence.serialization.{Snapshot => PersistentSnapshot}
 import akka.persistence.snapshot.SnapshotStore
@@ -14,6 +14,7 @@ import scala.concurrent.Future
   */
 private[hazelcast] final class MapSnapshotStore extends SnapshotStore {
   import scala.collection.JavaConverters._
+  import akka.persistence.hazelcast.Id.RichSnapshotMetadata
   import context.dispatcher
 
   private val snapshotMap = HazelcastExtension(context.system).snapshotMap
@@ -36,17 +37,12 @@ private[hazelcast] final class MapSnapshotStore extends SnapshotStore {
   }
 
   override def saveAsync(metadata: SnapshotMetadata, snapshot: Any): Future[Unit] =
-    Future(snapshotMap.put(
-      new Id(metadata.persistenceId, metadata.sequenceNr),
-      Snapshot(metadata, PersistentSnapshot(snapshot))
-    ))
+    Future(snapshotMap.put(metadata.toId, Snapshot(metadata, PersistentSnapshot(snapshot))))
 
-  override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] =
-    Future(snapshotMap.delete(new Id(metadata.persistenceId, metadata.sequenceNr)))
+  override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] = Future(snapshotMap.delete(metadata.toId))
 
   override def deleteAsync(persistenceId: String, criteria: SnapshotSelectionCriteria): Future[Unit] =
     Future(snapshotMap.executeOnEntries(DeleteProcessor, createPredicate(persistenceId, criteria)))
-
 
   private def createPredicate(persistenceId: String, criteria: SnapshotSelectionCriteria): Predicate[_, _] = {
     val predicateBuilder = new PredicateBuilder()

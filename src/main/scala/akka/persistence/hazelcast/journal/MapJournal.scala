@@ -24,6 +24,7 @@ private[hazelcast] object MapJournal {
 private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLogging {
   import scala.collection.JavaConverters._
   import scala.collection.breakOut
+  import akka.persistence.hazelcast.Id.RichPersistentRepr
   import context.dispatcher
 
   private val extension = HazelcastExtension(context.system)
@@ -52,7 +53,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeSingleEvent(event: PersistentRepr): Try[Unit] = {
     try {
-      journalMap.put(Id(event), event)
+      journalMap.put(event.toId, event)
       MapJournal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
@@ -65,7 +66,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     context.beginTransaction()
     try {
       val journalTransactionMap = context.getMap[Id, PersistentRepr](extension.journalMapName)
-      events.foreach(event => journalTransactionMap.put(Id(event), event))
+      events.foreach(event => journalTransactionMap.put(event.toId, event))
       context.commitTransaction()
       MapJournal.emptySuccess
     } catch {
@@ -91,7 +92,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeBatchNonAtomically(events: Seq[PersistentRepr]): Try[Unit] = {
     try {
-      val toPut: Map[Id, PersistentRepr] = events.map(event => Id(event) -> event)(breakOut)
+      val toPut: Map[Id, PersistentRepr] = events.map(event => event.to -> event)(breakOut)
       journalMap.putAll(toPut.asJava)
       MapJournal.emptySuccess
     } catch {

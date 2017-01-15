@@ -1,6 +1,6 @@
 package akka.persistence.hazelcast
 
-import akka.persistence.PersistentRepr
+import akka.persistence.{PersistentRepr, SnapshotMetadata}
 import com.hazelcast.nio.serialization.DataSerializable
 import com.hazelcast.nio.{ObjectDataInput, ObjectDataOutput}
 
@@ -9,7 +9,17 @@ import com.hazelcast.nio.{ObjectDataInput, ObjectDataOutput}
   */
 private[hazelcast] object Id {
 
-  def apply(event: PersistentRepr): Id = new Id(event.persistenceId, event.sequenceNr)
+  implicit class RichPersistentRepr(val persistentReprId: PersistentRepr) extends AnyVal {
+
+    def toId: Id = new Id(persistentReprId.persistenceId, persistentReprId.sequenceNr)
+
+  }
+
+  implicit class RichSnapshotMetadata(val snapshotMetadata: SnapshotMetadata) extends AnyVal {
+
+    def toId: Id = new Id(snapshotMetadata.persistenceId, snapshotMetadata.sequenceNr)
+
+  }
 
 }
 
