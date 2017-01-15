@@ -1,7 +1,7 @@
 package akka.persistence.hazelcast.journal
 
 import akka.actor.ActorLogging
-import akka.persistence.hazelcast.HazelcastExtension
+import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.hazelcast.util.{DeleteProcessor, LongExtractor}
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{AtomicWrite, PersistentRepr}
@@ -52,7 +52,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeSingleEvent(event: PersistentRepr): Try[Unit] = {
     try {
-      journalMap.put(EventId(event), event)
+      journalMap.put(Id(event), event)
       MapJournal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
@@ -64,8 +64,8 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     val context = extension.hazelcast.newTransactionContext(extension.transactionOptions)
     context.beginTransaction()
     try {
-      val journalTransactionMap = context.getMap[EventId, PersistentRepr](extension.journalMapName)
-      events.foreach(event => journalTransactionMap.put(EventId(event), event))
+      val journalTransactionMap = context.getMap[Id, PersistentRepr](extension.journalMapName)
+      events.foreach(event => journalTransactionMap.put(Id(event), event))
       context.commitTransaction()
       MapJournal.emptySuccess
     } catch {
@@ -91,7 +91,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeBatchNonAtomically(events: Seq[PersistentRepr]): Try[Unit] = {
     try {
-      val toPut: Map[EventId, PersistentRepr] = events.map(event => EventId(event) -> event)(breakOut)
+      val toPut: Map[Id, PersistentRepr] = events.map(event => Id(event) -> event)(breakOut)
       journalMap.putAll(toPut.asJava)
       MapJournal.emptySuccess
     } catch {
@@ -138,7 +138,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
       val idPredicate = persistenceIdPredicate(persistenceId, Predicates.greaterEqual("sequenceNr", fromSequenceNr))
       val supplier = Supplier.fromPredicate(
         idPredicate,
-        Supplier.all[EventId, PersistentRepr, java.lang.Long](LongExtractor)
+        Supplier.all[Id, PersistentRepr, java.lang.Long](LongExtractor)
       )
       val sequenceNumber = journalMap.aggregate(supplier, Aggregations.longMax()).toLong match {
         case Long.MinValue if journalMap.keySet(idPredicate).isEmpty =>
@@ -152,8 +152,8 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
   private def persistenceIdPredicate(
       persistenceId: String,
       predicate: Predicate[_, _]
-  ): Predicate[EventId, PersistentRepr] =
+  ): Predicate[Id, PersistentRepr] =
     Predicates.and(Predicates.equal("persistenceId", persistenceId), predicate)
-      .asInstanceOf[Predicate[EventId, PersistentRepr]]
+      .asInstanceOf[Predicate[Id, PersistentRepr]]
 
 }

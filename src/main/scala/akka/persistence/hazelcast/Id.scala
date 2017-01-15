@@ -1,4 +1,4 @@
-package akka.persistence.hazelcast.journal
+package akka.persistence.hazelcast
 
 import akka.persistence.PersistentRepr
 import com.hazelcast.nio.serialization.DataSerializable
@@ -7,13 +7,13 @@ import com.hazelcast.nio.{ObjectDataInput, ObjectDataOutput}
 /**
   * @author Igor Sorokin
   */
-private[hazelcast] object EventId {
+private[hazelcast] object Id {
 
-  def apply(event: PersistentRepr): EventId = new EventId(event.persistenceId, event.sequenceNr)
+  def apply(event: PersistentRepr): Id = new Id(event.persistenceId, event.sequenceNr)
 
 }
 
-private[hazelcast] final class EventId private() extends DataSerializable {
+private[hazelcast] final class Id private() extends DataSerializable {
   var persistenceId: String = _
   var sequenceNr: Long = _
 

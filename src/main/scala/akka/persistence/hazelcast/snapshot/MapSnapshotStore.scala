@@ -1,7 +1,6 @@
 package akka.persistence.hazelcast.snapshot
 
-import akka.persistence.hazelcast.HazelcastExtension
-import akka.persistence.hazelcast.journal.EventId
+import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.hazelcast.util.DeleteProcessor
 import akka.persistence.serialization.{Snapshot => PersistentSnapshot}
 import akka.persistence.snapshot.SnapshotStore
@@ -38,12 +37,12 @@ private[hazelcast] final class MapSnapshotStore extends SnapshotStore {
 
   override def saveAsync(metadata: SnapshotMetadata, snapshot: Any): Future[Unit] =
     Future(snapshotMap.put(
-      new EventId(metadata.persistenceId, metadata.sequenceNr),
+      new Id(metadata.persistenceId, metadata.sequenceNr),
       Snapshot(metadata, PersistentSnapshot(snapshot))
     ))
 
   override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] =
-    Future(snapshotMap.delete(new EventId(metadata.persistenceId, metadata.sequenceNr)))
+    Future(snapshotMap.delete(new Id(metadata.persistenceId, metadata.sequenceNr)))
 
   override def deleteAsync(persistenceId: String, criteria: SnapshotSelectionCriteria): Future[Unit] =
     Future(snapshotMap.executeOnEntries(DeleteProcessor, createPredicate(persistenceId, criteria)))
