@@ -44,11 +44,10 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
   }
 
   private[hazelcast] val journalMapName = config.getString("journal.map-name")
-  private[hazelcast] lazy val journalMap: IMap[Id, PersistentRepr] =
-    hazelcast.getMap[Id, PersistentRepr](journalMapName)
+  private[hazelcast] lazy val journalMap: IMap[Id, PersistentRepr] = hazelcast.getMap(journalMapName)
 
   private[hazelcast] lazy val highestDeletedSequenceNrMap: IMap[String, Long] =
-    hazelcast.getMap[String, Long](config.getString("journal.highest-deleted-sequence-number-map-name"))
+    hazelcast.getMap(config.getString("journal.highest-deleted-sequence-number-map-name"))
 
   private[hazelcast] lazy val snapshotMap: IMap[Id, Snapshot] =
     hazelcast.getMap(config.getString("snapshot-store.map-name"))
