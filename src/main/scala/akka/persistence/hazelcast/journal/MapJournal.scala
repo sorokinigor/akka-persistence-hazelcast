@@ -110,8 +110,8 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
           .maxBy(eventId => eventId.sequenceNr)
           .sequenceNr
         highestDeletedSequenceNrMap.set(persistenceId, highestDeletedSequenceNr)
+        journalMap.executeOnKeys(keys, DeleteProcessor)
       }
-      journalMap.executeOnKeys(keys, DeleteProcessor)
       log.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
     })
 
