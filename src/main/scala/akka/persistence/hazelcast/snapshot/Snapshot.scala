@@ -35,5 +35,4 @@ private[hazelcast] final class Snapshot private() extends DataSerializable {
     this.snapshot = in.readObject()
   }
 
-  override def toString = s"Snapshot($timestamp)"
 }

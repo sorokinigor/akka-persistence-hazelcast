@@ -43,5 +43,4 @@ private[hazelcast] final class Id private() extends DataSerializable {
     this.sequenceNr = in.readLong()
   }
 
-  override def toString = s"JournalEventId($persistenceId, $sequenceNr)"
 }
