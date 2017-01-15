@@ -5,7 +5,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{ActorSystem, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
 import akka.persistence.PersistentRepr
 import akka.persistence.hazelcast.journal.EventId
+import akka.persistence.hazelcast.snapshot.Snapshot
 import akka.persistence.hazelcast.util.SerializerAdapter
+import akka.persistence.serialization.{Snapshot => PersistenceSnapshot}
 import akka.serialization.SerializationExtension
 import com.hazelcast.config.{ClasspathXmlConfig, SerializerConfig}
 import com.hazelcast.core.{Hazelcast, HazelcastInstance, IMap}
@@ -37,6 +39,7 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
     val hazelcastConfig = new ClasspathXmlConfig(config.getString("config-file"))
     val serializationConfig = hazelcastConfig.getSerializationConfig
     serializationConfig.addSerializerConfig(createSerializationConfig(classOf[PersistentRepr]))
+    serializationConfig.addSerializerConfig(createSerializationConfig(classOf[PersistenceSnapshot]))
 
     Hazelcast.newHazelcastInstance(hazelcastConfig)
   }
@@ -47,6 +50,9 @@ private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) e
 
   private[hazelcast] lazy val highestDeletedSequenceNrMap: IMap[String, Long] =
     hazelcast.getMap[String, Long](config.getString("journal.highest-deleted-sequence-number-map-name"))
+
+  private[hazelcast] lazy val snapshotMap: IMap[EventId, Snapshot] =
+    hazelcast.getMap(config.getString("snapshot-store.map-name"))
 
   private[hazelcast] val shouldFailOnNonAtomicPersistAll: Boolean =
     config.getBoolean("journal.fail-on-non-atomic-persist-all")
