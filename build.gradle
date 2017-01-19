@@ -2,14 +2,15 @@ plugins {
   id 'scala'
   id "org.scoverage" version "2.1.0"
   id "com.github.maiflai.scalatest" version "0.14"
+  id "maven"
+  id "signing"
 }
-
 group 'com.github.sorokinigor'
-version '1.0.0-SNAPSHOT'
 
 repositories {
   jcenter()
 }
+
 def scalaVersion = System.getProperty('scala.version', '2.12.1')
 def scalaMajorVersion = toMajorVersion(scalaVersion)
 
@@ -65,28 +66,80 @@ dependencies {
   scoverage "org.scoverage:scalac-scoverage-runtime_${versions.scala.major}:${versions.scoverage}"
 }
 
-def artifactName = "${project.name}_${versions.scala.major}"
+checkScoverage {
+  minimumRate = 0.8
+}
+
+archivesBaseName = "${project.name}_${versions.scala.major}"
 
 jar {
-  baseName = artifactName
   manifest {
-    attributes "Implementation-Title": artifactName,
+    attributes "Implementation-Title": archivesBaseName,
                "Implementation-Version": version
   }
 }
 
-task sourceJar(type: Jar) {
-  baseName = artifactName
-  classifier "sources"
+task sourcesJar(type: Jar) {
+  classifier = 'sources'
   from sourceSets.main.allSource
 }
 
-artifacts {
-  archives sourceJar
+task javadocJar(type: Jar) {
+  classifier = 'javadoc'
+  from javadoc
 }
 
-checkScoverage {
-  minimumRate = 0.8
+artifacts {
+  archives javadocJar, sourcesJar
+}
+
+signing {
+  sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      pom.project {
+        name 'Akka Persistence Hazelcast'
+        packaging 'jar'
+        description 'An extension to Akka Persistence, which stores journals and snapshots in Hazelcast.'
+        url 'https://github.com/sorokinigor/akka-persistence-hazelcast'
+
+        scm {
+          url 'https://github.com/sorokinigor/akka-persistence-hazelcast'
+          connection 'scm:https://github.com/sorokinigor/akka-persistence-hazelcast.git'
+          developerConnection 'git@github.com:sorokinigor/akka-persistence-hazelcast.git'
+        }
+
+        licenses {
+          license {
+            name 'The Apache License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            id 'sorokinigor'
+            name 'Igor Sorokin'
+            email 'igorsorokin808@gmail.com'
+          }
+        }
+      }
+    }
+  }
 }
 
 def toMajorVersion(String scalaVersion) {
