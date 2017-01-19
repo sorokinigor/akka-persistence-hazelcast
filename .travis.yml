@@ -1,12 +1,26 @@
 language: scala
-scala:
-   - 2.11.8
-   - 2.12.1
-jdk:
-   - oraclejdk8
-env:
-   - HAZELCAST=3.6.7
-   - HAZELCAST=3.7.4
+matrix:
+  include:
+  - jdk: oraclejdk8
+    scala: 2.11.8
+    env:
+    - HAZELCAST=3.7.4 AKKA=2.4.0
+  - jdk: oraclejdk8
+    scala: 2.11.8
+    env:
+    - HAZELCAST=3.7.4 AKKA=2.4.16
+  - jdk: oraclejdk8
+    scala: 2.12.1
+    env:
+    - HAZELCAST=3.7.4 AKKA=2.4.12
+  - jdk: oraclejdk8
+    scala: 2.12.1
+    env:
+    - HAZELCAST=3.6.7 AKKA=2.4.16
+  - jdk: oraclejdk8
+    scala: 2.12.1
+    env:
+    - HAZELCAST=3.7.4 AKKA=2.4.16
 install: true
 script:
    - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} -Dhazelcast.version=${HAZELCAST} clean assemble testScoverage reportScoverage checkScoverage
