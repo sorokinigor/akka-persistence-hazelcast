@@ -117,9 +117,9 @@ uploadArchives {
         url 'https://github.com/sorokinigor/akka-persistence-hazelcast'
 
         scm {
-          url 'https://github.com/sorokinigor/akka-persistence-hazelcast'
-          connection 'scm:https://github.com/sorokinigor/akka-persistence-hazelcast.git'
-          developerConnection 'git@github.com:sorokinigor/akka-persistence-hazelcast.git'
+          connection 'scm:git:git://github.com/sorokinigor/akka-persistence-hazelcast.git'
+          developerConnection 'scm:git:ssh://github.com:sorokinigor/akka-persistence-hazelcast.git'
+          url 'https://github.com/sorokinigor/akka-persistence-hazelcast/tree/master'
         }
 
         licenses {
@@ -135,6 +135,7 @@ uploadArchives {
             id 'sorokinigor'
             name 'Igor Sorokin'
             email 'igorsorokin808@gmail.com'
+            organizationUrl 'https://github.com/sorokinigor/'
           }
         }
       }
