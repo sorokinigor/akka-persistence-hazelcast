@@ -16,6 +16,7 @@ import com.hazelcast.transaction.TransactionContext
 
 import scala.collection.immutable.Seq
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -28,7 +29,6 @@ private[hazelcast] object MapJournal {
 private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLogging {
   import scala.collection.JavaConverters._
   import scala.collection.breakOut
-  import akka.persistence.hazelcast.Id.RichPersistentRepr
   import context.dispatcher
 
   private val extension = HazelcastExtension(context.system)
@@ -57,7 +57,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeSingleEvent(event: PersistentRepr): Try[Unit] = {
     try {
-      journalMap.set(event.toId, event)
+      journalMap.set(event, event)
       MapJournal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
@@ -70,25 +70,25 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     context.beginTransaction()
     try {
       val journalTransactionMap = context.getMap[Id, PersistentRepr](extension.journalMapName)
-      events.foreach(event => journalTransactionMap.set(event.toId, event))
+      events.foreach(event => journalTransactionMap.set(event, event))
       context.commitTransaction()
       MapJournal.emptySuccess
     } catch {
       case serializationException: HazelcastSerializationException =>
         rollbackTransaction(context, persistenceId, serializationException)
         Failure(serializationException)
-      case writeException: Exception =>
+      case NonFatal(writeException) =>
         rollbackTransaction(context, persistenceId, writeException)
         throw writeException
     }
   }
 
-  private def rollbackTransaction(context: TransactionContext, persistenceId: String, cause: Exception) : Unit = {
+  private def rollbackTransaction(context: TransactionContext, persistenceId: String, cause: Throwable) : Unit = {
     log.error(s"Rolling back transaction '${context.getTxnId}' for '$persistenceId'.")
     try {
       context.rollbackTransaction()
     } catch {
-      case rollbackException: Exception =>
+      case NonFatal(rollbackException) =>
         log.error(s"Unable to rollback transaction '${context.getTxnId}' for '$persistenceId'.")
         cause.addSuppressed(rollbackException)
     }
@@ -96,7 +96,8 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeBatchNonAtomically(events: Seq[PersistentRepr]): Try[Unit] = {
     try {
-      val toPut: Map[Id, PersistentRepr] = events.map(event => event.toId -> event)(breakOut)
+      val toPut: Map[Id, PersistentRepr] = events
+        .map(event => { val id: Id = event; id -> event })(breakOut)
       journalMap.putAll(toPut.asJava)
       MapJournal.emptySuccess
     } catch {

@@ -9,38 +9,35 @@ import com.hazelcast.nio.{ObjectDataInput, ObjectDataOutput}
   */
 private[hazelcast] object Id {
 
-  implicit class RichPersistentRepr(val persistentReprId: PersistentRepr) extends AnyVal {
+  implicit def persistentRepr2Id(persistentRepr: PersistentRepr): Id =
+    new Id(persistentRepr.persistenceId, persistentRepr.sequenceNr)
 
-    def toId: Id = new Id(persistentReprId.persistenceId, persistentReprId.sequenceNr)
-
-  }
-
-  implicit class RichSnapshotMetadata(val snapshotMetadata: SnapshotMetadata) extends AnyVal {
-
-    def toId: Id = new Id(snapshotMetadata.persistenceId, snapshotMetadata.sequenceNr)
-
-  }
+  implicit def snapshotMetadata2Id(snapshotMetadata: SnapshotMetadata): Id =
+    new Id(snapshotMetadata.persistenceId, snapshotMetadata.sequenceNr)
 
 }
 
 private[hazelcast] final class Id private() extends DataSerializable {
-  var persistenceId: String = _
-  var sequenceNr: Long = _
+  private var id: String = _
+  private var sequenceNumber: Long = _
 
   def this(persistenceId: String, sequenceNr: Long) = {
     this()
-    this.persistenceId = persistenceId
-    this.sequenceNr = sequenceNr
+    this.id = persistenceId
+    this.sequenceNumber = sequenceNr
   }
 
+  def persistenceId: String = id
+  def sequenceNr: Long = sequenceNumber
+
   override def writeData(out: ObjectDataOutput): Unit = {
-    out.writeUTF(persistenceId)
-    out.writeLong(sequenceNr)
+    out.writeUTF(id)
+    out.writeLong(sequenceNumber)
   }
 
   override def readData(in: ObjectDataInput): Unit = {
-    this.persistenceId = in.readUTF()
-    this.sequenceNr = in.readLong()
+    this.id = in.readUTF()
+    this.sequenceNumber = in.readLong()
   }
 
 }

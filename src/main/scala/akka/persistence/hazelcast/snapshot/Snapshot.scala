@@ -16,23 +16,26 @@ private[hazelcast] object Snapshot {
 }
 
 private[hazelcast] final class Snapshot private() extends DataSerializable {
-  var timestamp: Long = _
-  var snapshot: PersistenceSnapshot = _
+  private var ts: Long = _
+  private var persistentSnapshot: PersistenceSnapshot = _
 
   def this(timestamp: Long, snapshot: PersistenceSnapshot) = {
     this()
-    this.timestamp = timestamp
-    this.snapshot = snapshot
+    this.ts = timestamp
+    this.persistentSnapshot = snapshot
   }
 
+  def timestamp: Long = ts
+  def snapshot: PersistenceSnapshot = persistentSnapshot
+
   override def writeData(out: ObjectDataOutput): Unit = {
-    out.writeLong(timestamp)
-    out.writeObject(snapshot)
+    out.writeLong(ts)
+    out.writeObject(persistentSnapshot)
   }
 
   override def readData(in: ObjectDataInput): Unit = {
-    this.timestamp = in.readLong()
-    this.snapshot = in.readObject()
+    this.ts = in.readLong()
+    this.persistentSnapshot = in.readObject()
   }
 
 }
