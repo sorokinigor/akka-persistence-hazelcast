@@ -19,12 +19,12 @@ The plugin is [tested](https://travis-ci.org/sorokinigor/akka-persistence-hazelc
 * Akka  2.4.0+
 
 ## Installation
-###Dependencies
+### Dependencies
 The plugin works with Scala 2.11/2.12, Hazelcast 3.6/3.7 and Akka 2.4.0+, but does not define them as compile time 
 dependencies. Therefore, please, make sure that you have included all the relevant dependencies in your project.
 
 All of the examples below are for Scala 2.12. You can easily change `2.12` to `2.11` in order to get the right artifacts.
-###Gradle
+### Gradle
 ```Groovy
 dependencies {
     compile "com.github.sorokinigor:akka-persistence-hazelcast_2.12:1.0.0"
@@ -37,14 +37,14 @@ repositories {
     mavenCentral()
 }
 ```
-###Sbt
+### Sbt
 ```Scala
 libraryDependencies += "com.github.sorokinigor" % "akka-persistence-hazelcast_2.12" % "1.0.0"
 libraryDependencies += "org.scala-lang" % "scala-library" % "2.12.1"
 libraryDependencies += "com.typesafe.akka" % "akka-persistence_2.12" % "2.4.16"
 libraryDependencies += "com.hazelcast" % "hazelcast" % "3.7.4" 
 ```
-###Maven
+### Maven
 ```xml
 <dependency>
   <groupId>com.github.sorokinigor</groupId>
