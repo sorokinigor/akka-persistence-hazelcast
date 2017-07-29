@@ -10,6 +10,10 @@ matrix:
     env:
     - HAZELCAST=3.7.4 AKKA=2.4.16
   - jdk: oraclejdk8
+    scala: 2.11.8
+    env:
+    - HAZELCAST=3.8.3 AKKA=2.5.3
+  - jdk: oraclejdk8
     scala: 2.12.1
     env:
     - HAZELCAST=3.7.4 AKKA=2.4.12
@@ -21,6 +25,10 @@ matrix:
     scala: 2.12.1
     env:
     - HAZELCAST=3.7.4 AKKA=2.4.16
+  - jdk: oraclejdk8
+    scala: 2.12.1
+    env:
+    - HAZELCAST=3.8.3 AKKA=2.5.3
 install: true
 script:
    - ./gradlew -Dscala.version=${TRAVIS_SCALA_VERSION} -Dhazelcast.version=${HAZELCAST} clean assemble testScoverage reportScoverage checkScoverage

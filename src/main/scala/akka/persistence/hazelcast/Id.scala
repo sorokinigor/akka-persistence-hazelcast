@@ -9,10 +9,10 @@ import com.hazelcast.nio.{ObjectDataInput, ObjectDataOutput}
   */
 private[hazelcast] object Id {
 
-  implicit def persistentRepr2Id(persistentRepr: PersistentRepr): Id =
+  def apply(persistentRepr: PersistentRepr): Id =
     new Id(persistentRepr.persistenceId, persistentRepr.sequenceNr)
 
-  implicit def snapshotMetadata2Id(snapshotMetadata: SnapshotMetadata): Id =
+  def apply(snapshotMetadata: SnapshotMetadata): Id =
     new Id(snapshotMetadata.persistenceId, snapshotMetadata.sequenceNr)
 
 }

@@ -28,7 +28,7 @@ object HazelcastExtension extends ExtensionId[HazelcastExtension] with Extension
   override def get(system: ActorSystem): HazelcastExtension = super.get(system)
 }
 
-private[hazelcast] final class HazelcastExtension(system: ExtendedActorSystem) extends Extension {
+final class HazelcastExtension private[hazelcast](system: ExtendedActorSystem) extends Extension {
 
   private val serializationExtension = SerializationExtension(system)
 

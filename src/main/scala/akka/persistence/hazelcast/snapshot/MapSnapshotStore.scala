@@ -39,13 +39,9 @@ private[hazelcast] final class MapSnapshotStore extends SnapshotStore with Actor
     })
 
   override def saveAsync(metadata: SnapshotMetadata, snapshot: Any): Future[Unit] =
-    Future(snapshotMap.set(metadata, Snapshot(metadata, PersistentSnapshot(snapshot))))
+    Future(snapshotMap.set(Id(metadata), Snapshot(metadata, PersistentSnapshot(snapshot))))
 
-  override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] =
-    Future({
-      val id: Id = metadata
-      snapshotMap.delete(id)
-    })
+  override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] = Future(snapshotMap.delete(Id(metadata)))
 
   override def deleteAsync(persistenceId: String, criteria: SnapshotSelectionCriteria): Future[Unit] =
     Future({

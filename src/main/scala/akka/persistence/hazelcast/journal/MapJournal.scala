@@ -1,13 +1,14 @@
 package akka.persistence.hazelcast.journal
 
 import java.util.Map.Entry
-import java.util.concurrent.TimeUnit
+import java.{lang, util}
 
 import akka.actor.ActorLogging
-import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.hazelcast.util.{DeleteProcessor, LongExtractor}
+import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{AtomicWrite, PersistentRepr}
+import com.hazelcast.core.ExecutionCallback
 import com.hazelcast.map.{EntryBackupProcessor, EntryProcessor}
 import com.hazelcast.mapreduce.aggregation.{Aggregations, Supplier}
 import com.hazelcast.nio.serialization.HazelcastSerializationException
@@ -15,7 +16,7 @@ import com.hazelcast.query.{Predicate, Predicates}
 import com.hazelcast.transaction.TransactionContext
 
 import scala.collection.immutable.Seq
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
@@ -23,13 +24,15 @@ import scala.util.{Failure, Success, Try}
   * @author Igor Sorokin
   */
 private[hazelcast] object MapJournal {
-  private val emptySuccess = Success({})
+  private val emptySuccess = Success[Unit]({})
+  private val successfulPromise = Promise.successful[Unit]({})
 }
 
 private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLogging {
+  import context.dispatcher
+
   import scala.collection.JavaConverters._
   import scala.collection.breakOut
-  import context.dispatcher
 
   private val extension = HazelcastExtension(context.system)
   private val journalMap = extension.journalMap
@@ -57,7 +60,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   private def writeSingleEvent(event: PersistentRepr): Try[Unit] = {
     try {
-      journalMap.set(event, event)
+      journalMap.set(Id(event), event)
       MapJournal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
@@ -70,7 +73,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     context.beginTransaction()
     try {
       val journalTransactionMap = context.getMap[Id, PersistentRepr](extension.journalMapName)
-      events.foreach(event => journalTransactionMap.set(event, event))
+      events.foreach(event => journalTransactionMap.set(Id(event), event))
       context.commitTransaction()
       MapJournal.emptySuccess
     } catch {
@@ -97,7 +100,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
   private def writeBatchNonAtomically(events: Seq[PersistentRepr]): Try[Unit] = {
     try {
       val toPut: Map[Id, PersistentRepr] = events
-        .map(event => { val id: Id = event; id -> event })(breakOut)
+        .map(event => Id(event) -> event)(breakOut)
       journalMap.putAll(toPut.asJava)
       MapJournal.emptySuccess
     } catch {
@@ -106,7 +109,24 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     }
   }
 
-  override def asyncDeleteMessagesTo(persistenceId: String, toSequenceNr: Long): Future[Unit] =
+  override def asyncDeleteMessagesTo(persistenceId: String, toSequenceNr: Long): Future[Unit] = {
+
+    def createDeleteCallbackOn(promise: Promise[Unit], keys: util.Set[Id]) = new ExecutionCallback[Long] {
+
+      override def onResponse(response: Long): Unit = {
+        Future({
+          promise.tryComplete(Try({
+            journalMap.executeOnKeys(keys, DeleteProcessor)
+            log.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' have been deleted.")
+          }))
+        })
+      }
+
+      override def onFailure(exception: Throwable): Unit = {
+        promise.failure(exception)
+      }
+    }
+
     Future({
       val idPredicate = persistenceIdPredicate(persistenceId, Predicates.lessEqual("sequenceNr", toSequenceNr))
       val keys = journalMap.keySet(idPredicate)
@@ -114,13 +134,16 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
         val highestDeletedSequenceNr = keys.asScala
           .maxBy(eventId => eventId.sequenceNr)
           .sequenceNr
-        highestDeletedSequenceNrMap
-          .submitToKey(persistenceId, new HighestSequenceNrProcessor(highestDeletedSequenceNr))
-          .get(1L, TimeUnit.MINUTES)
-        journalMap.executeOnKeys(keys, DeleteProcessor)
+        val processor = new HighestSequenceNrProcessor(highestDeletedSequenceNr)
+        val promise = Promise[Unit]()
+        highestDeletedSequenceNrMap.submitToKey(persistenceId, processor, createDeleteCallbackOn(promise, keys))
+        promise
+      } else {
+        MapJournal.successfulPromise
       }
-      log.debug(s"'${keys.size()}' events to '$toSequenceNr' for '$persistenceId' has been deleted.")
     })
+    .flatMap(promise => promise.future)
+  }
 
   override def asyncReplayMessages(persistenceId: String, fromSequenceNr: Long, toSequenceNr: Long, max: Long)
                                   (recoveryCallback: (PersistentRepr) => Unit): Future[Unit] =
@@ -142,11 +165,12 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
   override def asyncReadHighestSequenceNr(persistenceId: String, fromSequenceNr: Long): Future[Long] =
     Future({
       val idPredicate = persistenceIdPredicate(persistenceId, Predicates.greaterEqual("sequenceNr", fromSequenceNr))
-      val supplier = Supplier.fromPredicate(
+      val supplier: Supplier[Id, PersistentRepr, java.lang.Long] = Supplier.fromPredicate(
         idPredicate,
         Supplier.all[Id, PersistentRepr, java.lang.Long](LongExtractor)
       )
-      val sequenceNumber = journalMap.aggregate(supplier, Aggregations.longMax()).toLong match {
+      val aggregator = Aggregations.longMax[Id, lang.Long]()
+      val sequenceNumber = journalMap.aggregate[java.lang.Long, java.lang.Long](supplier, aggregator).toLong match {
         case Long.MinValue if journalMap.keySet(idPredicate).isEmpty =>
           highestDeletedSequenceNrMap.getOrDefault(persistenceId, 0L)
         case any => any
