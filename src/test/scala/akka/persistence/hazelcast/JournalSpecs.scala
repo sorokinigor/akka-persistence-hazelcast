@@ -1,7 +1,5 @@
-package akka.persistence.hazelcast.journal
+package akka.persistence.hazelcast
 
-
-import scala.concurrent.duration._
 import akka.actor.Actor
 import akka.persistence.JournalProtocol._
 import akka.persistence.journal.JournalSpec
@@ -9,10 +7,12 @@ import akka.persistence.{AtomicWrite, CapabilityFlag, DeleteMessagesSuccess, Per
 import akka.testkit.{EventFilter, TestProbe}
 import com.typesafe.config.ConfigFactory
 
+import scala.concurrent.duration._
+
 /**
   * @author Igor Sorokin
   */
-class MapJournalWithDisabledTransactionsSpec extends JournalSpec(ConfigFactory.load()) {
+class JournalWithDisabledTransactionsSpec extends JournalSpec(ConfigFactory.load()) {
 
   override protected def supportsRejectingNonSerializableObjects: CapabilityFlag = CapabilityFlag.on()
 
@@ -35,7 +35,7 @@ class MapJournalWithDisabledTransactionsSpec extends JournalSpec(ConfigFactory.l
 
 }
 
-class MapJournalWithEnabledTransactionsSpec
+class JournalWithEnabledTransactionsSpec
   extends JournalSpec(ConfigFactory.load("application-transaction-enabled.conf"))
   with RejectingNonSerializableForPersistAllSpec {
 
@@ -43,7 +43,7 @@ class MapJournalWithEnabledTransactionsSpec
 
 }
 
-class MapJournalWithNonAtomicPersistAllSpec
+class JournalWithNonAtomicPersistAllSpec
   extends JournalSpec(ConfigFactory.load("application-non-atomic-persist-all.conf"))
   with RejectingNonSerializableForPersistAllSpec {
 

@@ -1,11 +1,10 @@
-package akka.persistence.hazelcast.snapshot
+package akka.persistence.hazelcast
 
 import akka.actor.ActorLogging
-import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.hazelcast.util.DeleteProcessor
-import akka.persistence.serialization.{Snapshot => PersistentSnapshot}
-import akka.persistence.snapshot.SnapshotStore
 import akka.persistence.{SelectedSnapshot, SnapshotMetadata, SnapshotSelectionCriteria}
+import com.hazelcast.nio.serialization.DataSerializable
+import com.hazelcast.nio.{ObjectDataInput, ObjectDataOutput}
 import com.hazelcast.query.{Predicate, PredicateBuilder}
 
 import scala.concurrent.Future
@@ -13,9 +12,10 @@ import scala.concurrent.Future
 /**
   * @author Igor Sorokin
   */
-private[hazelcast] final class MapSnapshotStore extends SnapshotStore with ActorLogging {
-  import scala.collection.JavaConverters._
+private[hazelcast] final class SnapshotStore extends akka.persistence.snapshot.SnapshotStore with ActorLogging {
   import context.dispatcher
+
+  import scala.collection.JavaConverters._
 
   private val snapshotMap = HazelcastExtension(context.system).snapshotMap
 
@@ -39,7 +39,10 @@ private[hazelcast] final class MapSnapshotStore extends SnapshotStore with Actor
     })
 
   override def saveAsync(metadata: SnapshotMetadata, snapshot: Any): Future[Unit] =
-    Future(snapshotMap.set(Id(metadata), Snapshot(metadata, PersistentSnapshot(snapshot))))
+    Future(snapshotMap.set(
+      Id(metadata),
+      new SnapshotStore.Snapshot(metadata.timestamp, akka.persistence.serialization.Snapshot(snapshot))
+    ))
 
   override def deleteAsync(metadata: SnapshotMetadata): Future[Unit] = Future(snapshotMap.delete(Id(metadata)))
 
@@ -59,3 +62,32 @@ private[hazelcast] final class MapSnapshotStore extends SnapshotStore with Actor
   }
 
 }
+
+private[hazelcast] object SnapshotStore {
+
+  final class Snapshot private() extends DataSerializable {
+    private var ts: Long = _
+    private var persistentSnapshot: akka.persistence.serialization.Snapshot = _
+
+    def this(timestamp: Long, snapshot: akka.persistence.serialization.Snapshot) = {
+      this()
+      this.ts = timestamp
+      this.persistentSnapshot = snapshot
+    }
+
+    def timestamp: Long = ts
+    def snapshot: akka.persistence.serialization.Snapshot = persistentSnapshot
+
+    override def writeData(out: ObjectDataOutput): Unit = {
+      out.writeLong(ts)
+      out.writeObject(persistentSnapshot)
+    }
+
+    override def readData(in: ObjectDataInput): Unit = {
+      this.ts = in.readLong()
+      this.persistentSnapshot = in.readObject()
+    }
+
+  }
+}
+

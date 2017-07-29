@@ -1,11 +1,10 @@
-package akka.persistence.hazelcast.journal
+package akka.persistence.hazelcast
 
+import java.lang
 import java.util.Map.Entry
-import java.{lang, util}
 
 import akka.actor.ActorLogging
 import akka.persistence.hazelcast.util.{DeleteProcessor, LongExtractor}
-import akka.persistence.hazelcast.{HazelcastExtension, Id}
 import akka.persistence.journal.AsyncWriteJournal
 import akka.persistence.{AtomicWrite, PersistentRepr}
 import com.hazelcast.core.ExecutionCallback
@@ -23,12 +22,7 @@ import scala.util.{Failure, Success, Try}
 /**
   * @author Igor Sorokin
   */
-private[hazelcast] object MapJournal {
-  private val emptySuccess = Success[Unit]({})
-  private val successfulPromise = Promise.successful[Unit]({})
-}
-
-private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLogging {
+private[hazelcast] final class Journal extends AsyncWriteJournal with ActorLogging {
   import context.dispatcher
 
   import scala.collection.JavaConverters._
@@ -61,7 +55,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
   private def writeSingleEvent(event: PersistentRepr): Try[Unit] = {
     try {
       journalMap.set(Id(event), event)
-      MapJournal.emptySuccess
+      Journal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
         Failure(e)
@@ -75,7 +69,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
       val journalTransactionMap = context.getMap[Id, PersistentRepr](extension.journalMapName)
       events.foreach(event => journalTransactionMap.set(Id(event), event))
       context.commitTransaction()
-      MapJournal.emptySuccess
+      Journal.emptySuccess
     } catch {
       case serializationException: HazelcastSerializationException =>
         rollbackTransaction(context, persistenceId, serializationException)
@@ -102,7 +96,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
       val toPut: Map[Id, PersistentRepr] = events
         .map(event => Id(event) -> event)(breakOut)
       journalMap.putAll(toPut.asJava)
-      MapJournal.emptySuccess
+      Journal.emptySuccess
     } catch {
       case e: HazelcastSerializationException =>
         Failure(e)
@@ -111,7 +105,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
 
   override def asyncDeleteMessagesTo(persistenceId: String, toSequenceNr: Long): Future[Unit] = {
 
-    def createDeleteCallbackOn(promise: Promise[Unit], keys: util.Set[Id]) = new ExecutionCallback[Long] {
+    def createDeleteCallbackOn(promise: Promise[Unit], keys: java.util.Set[Id]) = new ExecutionCallback[Long] {
 
       override def onResponse(response: Long): Unit = {
         Future({
@@ -139,7 +133,7 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
         highestDeletedSequenceNrMap.submitToKey(persistenceId, processor, createDeleteCallbackOn(promise, keys))
         promise
       } else {
-        MapJournal.successfulPromise
+        Journal.successfulPromise
       }
     })
     .flatMap(promise => promise.future)
@@ -186,6 +180,11 @@ private[hazelcast] final class MapJournal extends AsyncWriteJournal with ActorLo
     Predicates.and(Predicates.equal("persistenceId", persistenceId), predicate)
       .asInstanceOf[Predicate[Id, PersistentRepr]]
 
+}
+
+private[hazelcast] object Journal {
+  private val emptySuccess = Success[Unit]({})
+  private val successfulPromise = Promise.successful[Unit]({})
 }
 
 @SerialVersionUID(1L)
