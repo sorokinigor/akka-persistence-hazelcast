@@ -20,7 +20,7 @@ The plugin is [tested](https://travis-ci.org/sorokinigor/akka-persistence-hazelc
 
 ## Installation
 ### Dependencies
-The plugin works with Scala 2.11/2.12, Hazelcast 3.6/3.7 and Akka 2.4.0+, but does not define them as compile time 
+The plugin works with Scala 2.11/2.12, Hazelcast 3.6/3.7/3.8 and Akka 2.4.x/2.5.x, but does not define them as compile time 
 dependencies. Therefore, please, make sure that you have included all the relevant dependencies in your project.
 
 All of the examples below are for Scala 2.12. You can easily change `2.12` to `2.11` in order to get the right artifacts.
@@ -29,8 +29,8 @@ All of the examples below are for Scala 2.12. You can easily change `2.12` to `2
 dependencies {
     compile "com.github.sorokinigor:akka-persistence-hazelcast_2.12:1.0.0"
     compile "org.scala-lang:scala-library:2.12.1"
-    compile "com.typesafe.akka:akka-persistence_2.12:2.4.16"
-    compile "com.hazelcast:hazelcast:3.7.4"
+    compile "com.typesafe.akka:akka-persistence_2.12:2.5.3"
+    compile "com.hazelcast:hazelcast:3.8.3"
 }
 
 repositories {
@@ -41,8 +41,8 @@ repositories {
 ```Scala
 libraryDependencies += "com.github.sorokinigor" % "akka-persistence-hazelcast_2.12" % "1.0.0"
 libraryDependencies += "org.scala-lang" % "scala-library" % "2.12.1"
-libraryDependencies += "com.typesafe.akka" % "akka-persistence_2.12" % "2.4.16"
-libraryDependencies += "com.hazelcast" % "hazelcast" % "3.7.4" 
+libraryDependencies += "com.typesafe.akka" % "akka-persistence_2.12" % "2.5.3"
+libraryDependencies += "com.hazelcast" % "hazelcast" % "3.8.3" 
 ```
 ### Maven
 ```xml
@@ -61,13 +61,13 @@ libraryDependencies += "com.hazelcast" % "hazelcast" % "3.7.4"
 <dependency>
     <groupId>com.typesafe.akka</groupId>
     <artifactId>akka-persistence_2.12</artifactId>
-    <version>2.4.16</version>
+    <version>2.5.3</version>
 </dependency>
 
 <dependency>
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast</artifactId>
-    <version>3.7.4</version>
+    <version>3.8.3</version>
 </dependency>
 ```
 ## Activate plugin 
