@@ -1,10 +1,9 @@
 # Akka Persistence Hazelcast
 [![Build Status](https://travis-ci.org/sorokinigor/akka-persistence-hazelcast.svg?branch=master)](https://travis-ci.org/sorokinigor/akka-persistence-hazelcast)
-[![codecov](https://codecov.io/gh/sorokinigor/akka-persistence-hazelcast/branch/master/graph/badge.svg)](https://codecov.io/gh/sorokinigor/akka-persistence-hazelcast)
 [![Release 2.12](https://img.shields.io/maven-central/v/com.github.sorokinigor/akka-persistence-hazelcast_2.12.svg?label=release%20for%20Scala%202.12)](http://search.maven.org/#artifactdetails%7Ccom.github.sorokinigor%7Cakka-persistence-hazelcast_2.12%7C1.0.0%7Cjar)
 [![Release 2.12](https://img.shields.io/maven-central/v/com.github.sorokinigor/akka-persistence-hazelcast_2.11.svg?label=release%20for%20Scala%202.11)](http://search.maven.org/#artifactdetails%7Ccom.github.sorokinigor%7Cakka-persistence-hazelcast_2.11%7C1.0.0%7Cjar)
 ## Introduction
-A plugin for [Akka Persistence](http://doc.akka.io/docs/akka/2.4/scala/persistence.html), which provides a journal
+A plugin for [Akka Persistence](http://doc.akka.io/docs/akka/2.5/scala/persistence.html), which provides a journal
 and a snapshot store backed by Hazelcast. Please, consider to read the documentation for the [plugin](https://github.com/sorokinigor/akka-persistence-hazelcast/wiki) 
 and the [Hazelcast](https://hazelcast.org/documentation/) itself.
 * [Prerequisites](#prerequisites)
@@ -15,12 +14,12 @@ and the [Hazelcast](https://hazelcast.org/documentation/) itself.
 The plugin is [tested](https://travis-ci.org/sorokinigor/akka-persistence-hazelcast) against:
 * Scala 2.11/2.12
 * Java 8
-* Hazelcast 3.6+
-* Akka  2.4.0+
+* Hazelcast 3.6.x-3.8.x
+* Akka  2.4.x-2.5.x
 
 ## Installation
 ### Dependencies
-The plugin works with Scala 2.11/2.12, Hazelcast 3.6/3.7/3.8 and Akka 2.4.x/2.5.x, but does not define them as compile time 
+The plugin works with Scala 2.11/2.12, Hazelcast 3.6.x/3.7.x/3.8.x and Akka 2.4.x/2.5.x, but does not define them as compile time 
 dependencies. Therefore, please, make sure that you have included all the relevant dependencies in your project.
 
 All of the examples below are for Scala 2.12. You can easily change `2.12` to `2.11` in order to get the right artifacts.

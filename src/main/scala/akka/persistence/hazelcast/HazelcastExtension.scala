@@ -21,9 +21,6 @@ object HazelcastExtension extends ExtensionId[HazelcastExtension] with Extension
 
   override def lookup(): ExtensionId[_ <: Extension] = HazelcastExtension
 
-  /**
-   * Java API: retrieve the Count extension for the given system.
-   */
   override def get(system: ActorSystem): HazelcastExtension = super.get(system)
 }
 
