@@ -1,7 +1,7 @@
 # Akka Persistence Hazelcast
 [![Build Status](https://travis-ci.org/sorokinigor/akka-persistence-hazelcast.svg?branch=master)](https://travis-ci.org/sorokinigor/akka-persistence-hazelcast)
-[![Release 2.12](https://img.shields.io/maven-central/v/com.github.sorokinigor/akka-persistence-hazelcast_2.12.svg?label=release%20for%20Scala%202.12)](http://search.maven.org/#artifactdetails%7Ccom.github.sorokinigor%7Cakka-persistence-hazelcast_2.12%7C1.0.0%7Cjar)
-[![Release 2.12](https://img.shields.io/maven-central/v/com.github.sorokinigor/akka-persistence-hazelcast_2.11.svg?label=release%20for%20Scala%202.11)](http://search.maven.org/#artifactdetails%7Ccom.github.sorokinigor%7Cakka-persistence-hazelcast_2.11%7C1.0.0%7Cjar)
+[![Release 2.12](https://img.shields.io/maven-central/v/com.github.sorokinigor/akka-persistence-hazelcast_2.12.svg?label=release%20for%20Scala%202.12)](http://search.maven.org/#artifactdetails%7Ccom.github.sorokinigor%7Cakka-persistence-hazelcast_2.12%7C1.1.0%7Cjar)
+[![Release 2.12](https://img.shields.io/maven-central/v/com.github.sorokinigor/akka-persistence-hazelcast_2.11.svg?label=release%20for%20Scala%202.11)](http://search.maven.org/#artifactdetails%7Ccom.github.sorokinigor%7Cakka-persistence-hazelcast_2.11%7C1.1.0%7Cjar)
 ## Introduction
 A plugin for [Akka Persistence](http://doc.akka.io/docs/akka/2.5/scala/persistence.html), which provides a journal
 and a snapshot store backed by Hazelcast. Please, consider to read the documentation for the [plugin](https://github.com/sorokinigor/akka-persistence-hazelcast/wiki) 
@@ -26,7 +26,7 @@ All of the examples below are for Scala 2.12. You can easily change `2.12` to `2
 ### Gradle
 ```Groovy
 dependencies {
-    compile "com.github.sorokinigor:akka-persistence-hazelcast_2.12:1.0.0"
+    compile "com.github.sorokinigor:akka-persistence-hazelcast_2.12:1.1.0"
     compile "org.scala-lang:scala-library:2.12.1"
     compile "com.typesafe.akka:akka-persistence_2.12:2.5.3"
     compile "com.hazelcast:hazelcast:3.8.3"
@@ -38,7 +38,7 @@ repositories {
 ```
 ### Sbt
 ```Scala
-libraryDependencies += "com.github.sorokinigor" % "akka-persistence-hazelcast_2.12" % "1.0.0"
+libraryDependencies += "com.github.sorokinigor" % "akka-persistence-hazelcast_2.12" % "1.1.0"
 libraryDependencies += "org.scala-lang" % "scala-library" % "2.12.1"
 libraryDependencies += "com.typesafe.akka" % "akka-persistence_2.12" % "2.5.3"
 libraryDependencies += "com.hazelcast" % "hazelcast" % "3.8.3" 
@@ -48,7 +48,7 @@ libraryDependencies += "com.hazelcast" % "hazelcast" % "3.8.3"
 <dependency>
   <groupId>com.github.sorokinigor</groupId>
   <artifactId>akka-persistence-hazelcast_2.12</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 
 <dependency>
