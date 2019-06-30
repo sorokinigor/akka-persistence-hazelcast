@@ -7,7 +7,7 @@ import akka.persistence.PersistentRepr
 import akka.persistence.hazelcast.util.SerializerAdapter
 import akka.persistence.serialization.{Snapshot => PersistenceSnapshot}
 import akka.serialization.SerializationExtension
-import com.hazelcast.config.{ClasspathXmlConfig, SerializerConfig}
+import com.hazelcast.config.{ClasspathXmlConfig, FileSystemXmlConfig, SerializerConfig}
 import com.hazelcast.core.{Hazelcast, HazelcastInstance, IMap}
 import com.hazelcast.transaction.TransactionOptions
 import com.typesafe.config.Config
@@ -31,7 +31,17 @@ final class HazelcastExtension private[hazelcast](system: ExtendedActorSystem) e
   private[hazelcast] val config: Config = system.settings.config.getConfig("hazelcast")
 
   val hazelcast: HazelcastInstance = {
-    val hazelcastConfig = new ClasspathXmlConfig(config.getString("config-file"))
+
+    val hazelcastConfig = {
+      val configFile = config.getString("config-file")
+      try {
+        new ClasspathXmlConfig(configFile)
+      }
+      catch {
+        case e: IllegalArgumentException =>
+          new FileSystemXmlConfig(configFile)
+      }
+    }
     val serializationConfig = hazelcastConfig.getSerializationConfig
     serializationConfig.addSerializerConfig(createSerializationConfig(classOf[PersistentRepr]))
     serializationConfig.addSerializerConfig(createSerializationConfig(classOf[PersistenceSnapshot]))
